@@ -14,19 +14,19 @@
             <table cellspacing="0" cellpadding="0">
                 <tr ref="header">
                     <th id="th-id">#</th>
-                    <th id="th-title" @click="sortBy('name')" :class="{ active: sortType.name !== 0 }">Title
-                        <IconCaretUp v-if="sortType.name !== 0" color="white"
-                            :class="{ 'flip-vertical': sortType.name === -1 }" />
+                    <th id="th-title" @click="sortBy('name')" :class="{ active: sorting.criteria === 'name' }">Title
+                        <IconCaretUp color="white" :class="{ 'flip-vertical': sorting.order === 'desc' }"
+                            v-show="sorting.order !== null" />
                     </th>
                     <th id="th-artist">Artist</th>
                     <th id="th-album">Album</th>
-                    <th id="th-duration" @click="sortBy('duration_ms')" :class="{ active: sortType.duration_ms !== 0 }">
-                        Duration
-                        <IconCaretUp v-if="sortType.duration_ms !== 0" color="white"
-                            :class="{ 'flip-vertical': sortType.duration_ms === -1 }" />
+                    <th id="th-duration" @click="sortBy('duration_ms')"
+                        :class="{ active: sorting.criteria === 'duration_ms' }">Duration
+                        <IconCaretUp color="white" :class="{ 'flip-vertical': sorting.order === 'desc' }"
+                            v-show="sorting.order !== null" />
                     </th>
                 </tr>
-                <tr class="song" v-for="(song, index) in filteredSongs" :key="song.id" @dblclick="selectSong(song)">
+                <tr class="song" v-for="( song, index ) in  filteredSongs " :key="song.id" @dblclick="selectSong(song)">
                     <td id="td-index">
                         <IconPlay v-if="song.id == currentlyPlayingId" />
                         <span id="txt-index" v-if="song.id != currentlyPlayingId">{{ index + 1 }}</span>
@@ -40,9 +40,8 @@
                     <td id="td-album">{{ song.album.name }}</td>
                     <td id="td-duration">{{ formatDuration(song.duration_ms) }}</td>
                     <td class="centered-cell">
-                        <IconHeart @click="toggleFavorite(song.id)" :class="{ 'active-heart': !isFavorite(song.id) }" />
+                        <IconHeart @click="toggleFavorite(song.id)" :class="{ 'active-heart': isFavorite(song.id) }" />
                     </td>
-
                 </tr>
             </table>
         </div>
@@ -62,12 +61,13 @@ export default {
         return {
             searchQuery: '',
             showFavorites: false,
-            sortType: {
-                name: 0,
-                duration_ms: 0,
+            sorting: {
+                criteria: null,
+                order: null,
             },
             currentlyPlayingId: null,
             songs: songsJS,
+            filteredSongs: null, // Corrected variable name
             favorites: useAuthStore().user.favorite_songs,
         };
     },
@@ -78,57 +78,50 @@ export default {
     },
     computed: {
         filteredSongs() {
-            let filtered = [...this.songs];
+            this.filteredSongs = this.songs.slice(); // Corrected variable name
 
+            // Perform search query filtering
             if (this.searchQuery) {
                 const query = this.searchQuery.toLowerCase();
-                filtered = filtered.filter((song) => {
-                    return (
-                        song.name.toLowerCase().includes(query) ||
-                        song.album.artists.some((artist) => artist.name.toLowerCase().includes(query))
-                    );
+                this.filteredSongs = this.filteredSongs.filter((song) => {
+                    return song.name.toLowerCase().includes(query);
                 });
             }
 
+            // Apply favorites filter
             if (this.showFavorites) {
-                filtered = filtered.filter(song => this.isFavorite(song.id));
+                this.filteredSongs = this.filteredSongs.filter(song => this.isFavorite(song.id));
             }
 
-            if (this.sortType.name === 1) {
-                filtered.sort((a, b) => a.name.localeCompare(b.name));
-            } else if (this.sortType.name === -1) {
-                filtered.sort((a, b) => b.name.localeCompare(a.name));
-            } else if (this.sortType.duration_ms === 1) {
-                filtered.sort((a, b) => a.duration_ms - b.duration_ms);
-            } else if (this.sortType.duration_ms === -1) {
-                filtered.sort((a, b) => b.duration_ms - a.duration_ms);
-            }
-
-            return filtered;
+            return this.filteredSongs; // Corrected variable name
         },
     },
     methods: {
-        sortBy(type) {
-            if (type === 'name') {
-                this.sortType.duration_ms = 0;
-                if (this.sortType.name === 0) {
-                    this.sortType.name = 1;
-                } else if (this.sortType.name === 1) {
-                    this.sortType.name = -1;
-                } else {
-                    this.sortType.name = 0;
-                }
-            } else if (type === 'duration_ms') {
-                this.sortType.name = 0;
-                if (this.sortType.duration_ms === 0) {
-                    this.sortType.duration_ms = 1;
-                } else if (this.sortType.duration_ms === 1) {
-                    this.sortType.duration_ms = -1;
-                } else {
-                    this.sortType.duration_ms = 0;
-                }
+        sortBy(criteria) {
+            if (this.sorting.order === null) {
+                this.sorting.order = "asc";
+            } else if (this.sorting.order === "asc") {
+                this.sorting.order = "desc";
+            } else {
+                this.sorting.order = null;
             }
+
+            // Perform sorting based on the criteria and order
+            if (criteria === 'name') {
+                this.filteredSongs.sort((a, b) => a.name.localeCompare(b.name));
+            } else if (criteria === 'duration_ms') {
+                this.filteredSongs.sort((a, b) => a.duration_ms - b.duration_ms);
+            }
+
+            if (this.sorting.order === "desc") {
+                this.filteredSongs.reverse();
+            } else if (this.sorting.order == null) {
+                this.filteredSongs = this.songs.slice();
+            }
+
+            return this.filteredSongs;
         },
+
         selectSong(song) {
             usePlayerStore().setNowPlaying(song);
             this.currentlyPlayingId = song.id;
@@ -155,4 +148,14 @@ export default {
     },
 };
 </script>
-<style></style>
+
+<style>
+IconCaretUp {
+    color: white;
+}
+
+.active-heart {
+    fill: #1db954;
+    opacity: 1;
+}
+</style>
