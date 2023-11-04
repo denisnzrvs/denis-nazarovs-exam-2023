@@ -5,9 +5,33 @@
                 <img src="@/assets/logo.svg" />
                 <div>KRAKEN.FM</div>
             </div>
-            <input id="input-email" placeholder="E-mail" />
-            <input id="input-password" placeholder="Password" />
-            <button id="btn-submit">LOGIN</button>
+            <input id="input-email" placeholder="E-mail" v-model="email" />
+            <input id="input-password" type="password" placeholder="Password" v-model="password" />
+            <button id="btn-submit" type="submit" :disabled="isButtonDisabled" @click="auth">LOGIN</button>
         </form>
     </div>
 </template>
+<script>
+import { computed } from 'vue';
+import { useAuthStore } from '../stores/auth';
+
+export default {
+    data() {
+        return {
+            email: '',
+            password: ''
+        }
+    },
+    computed: {
+        isButtonDisabled() {
+            return !(this.email.length > 0 && this.password.length >= 6);
+        }
+    },
+    methods: {
+        auth() {
+            useAuthStore().authenticate(this.email, this.password);
+        }
+    }
+}
+</script>
+<style></style>

@@ -1,22 +1,29 @@
 import { defineStore } from 'pinia'
 
+
 export const usePlayerStore = defineStore('player', {
     state: () => ({
-        playlist   : [],
-        now_playing: {}, // SONG OBJECT
+        playlist: [],
+        now_playing: null,
     }),
     getters: {
-        getNextSong(){
-
+        getNextSong() {
+            const index = this.playlist.findIndex(song => song.id === this.now_playing.id);
+            return this.playlist[index + 1];
         },
         getPreviousSong() {
-
+            const index = this.playlist.findIndex(song => song.id === this.now_playing.id);
+            if (index < 0) {
+                return this.playlist[index - 1];
+            } else {
+                return false;
+            }
         },
         getNowPlayingSongId() {
             return this.now_playing?.id;
         },
         getNowPlaying() {
-
+            return this.now_playing;
         },
         getNowPlayingAlbumID() {
             return this.now_playing?.album?.id ?? null;
@@ -36,10 +43,10 @@ export const usePlayerStore = defineStore('player', {
     },
     actions: {
         setPlaylist(songs) {
-
+            this.playlist = songs;
         },
         setNowPlaying(song) {
-
+            this.now_playing = song;
         },
         resetNowPlaying() {
             this.now_playing = {};
