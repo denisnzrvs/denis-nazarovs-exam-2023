@@ -3,23 +3,20 @@
         <div class="wrapper-header">
             <h1>ALBUMS</h1>
             <div class="settings">
-                <button id="btn-grid" @click="activateGridLayout">
-                    <IconGrid />
-                </button>
-                <button id="btn-list" @click="activateListLayout">
-                    <IconList />
-                </button>
+                <button id="btn-grid" @click="switchLayout('grid')">IconGrid</button>
+                <button id="btn-list" @click="switchLayout('list')">IconList</button>
             </div>
         </div>
-        <ul id="list-albums" :class="{ grid: isGridLayoutActive }">
-            <li class="album" v-for="album in groupedAlbums" :key="album.id" @click="selectAlbum(album)">
-                <img id="img-album" :src="album.coverUrl" />
+        <ul :class="{ 'grid': isGridLayout, 'list': !isGridLayout }" id="list-albums">
+            <li v-for="(album, index) in albums" :key="index" class="album" @click="selectAlbum(album)"
+                :class="{ 'active': album.id === currentlyPlayingAlbumId }">
+                <img id="img-album" :src="album.cover" />
                 <div class="album-info">
                     <h4 id="txt-album-name">{{ album.name }}</h4>
-                    <p id="txt-album-artists">{{ album.artists }}</p>
+                    <p id="txt-album-artists">{{ album.artist }}</p>
                     <div class="album-year">
-                        <p id="txt-album-year">{{ getReleaseYear(album.releaseDate) }}</p>
-                        <p id="txt-album-tracks">{{ getTrackCount(album.trackCount) }}</p>
+                        <p id="txt-album-year">{{ getYear(album.release_year) }}</p>
+                        <p id="txt-album-tracks">{{ album.songs.length > 1 ? album.songs.length + ' songs' : '1 song' }}</p>
                     </div>
                 </div>
             </li>
@@ -28,63 +25,61 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue';
-
-import IconGrid from '../components/icons/IconGrid.vue'
-import IconList from '../components/icons/IconList.vue';
-import songsJSON from '../data/songs';
+import songs from '../data/songs.js'; // Import your data
+import { usePlayerStore } from '../stores/player';
 
 export default {
     data() {
         return {
-            isGridLayoutActive: true,
-            albums: [
-            ],
-            currentlyPlayingSong: null,
+            isGridLayout: true,
+            albums: [],
+            currentlyPlayingAlbumId: null,
         };
     },
-    computed: {
-        groupedAlbums() {
-            // Group albums based on your logic
-            return this.albums;
-        },
+    created() {
+        // Group songs into albums (you need to define the grouping logic)
+        this.albums = this.groupIntoAlbums(songs);
     },
     methods: {
-        activateGridLayout() {
-            this.isGridLayoutActive = true;
+        getYear(date) {
+            return date.split('-')[0];
         },
-        activateListLayout() {
-            this.isGridLayoutActive = false;
+        switchLayout(layout) {
+            this.isGridLayout = layout === 'grid';
         },
         selectAlbum(album) {
-            // Handle album selection
+            usePlayerStore().setPlaylist(album.songs);
+            usePlayerStore().setNowPlaying(album.songs[0]);
         },
-        getReleaseYear(date) {
-            // Extract and format the release year
-            return date ? new Date(date).getFullYear() : '';
+        getArtists(albumArtists) {
+            return albumArtists.map((artist) => artist.name).join(', ');
         },
-        getTrackCount(count) {
-            return `${count} song${count !== 1 ? 's' : ''}`;
+        // You need to define the grouping logic for albums here
+        groupIntoAlbums(songs) {
+            const albumMap = new Map();
+
+            songs.forEach((song) => {
+                const albumId = song.album.id;
+
+                if (!albumMap.has(albumId)) {
+                    albumMap.set(albumId, {
+                        id: albumId,
+                        name: song.album.name,
+                        songs: [song],
+                        artist: this.getArtists(song.album.artists),
+                        release_year: this.getYear(song.album.release_date),
+                        cover: song.album.images[0].url,
+                    });
+                } else {
+                    albumMap.get(albumId).songs.push(song);
+                }
+            });
+            return Array.from(albumMap.values());
         },
-    },
-    components: {
-        IconGrid,
-        IconList,
     },
 };
 </script>
 
-<style scoped>
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    grid-gap: 20px;
-}
-
-#btn-grid,
-#btn-list {
-    color: white;
-}
-
-/* Add your other CSS styles here */
+<style>
+/* Add your CSS styles here */
 </style>

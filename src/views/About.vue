@@ -25,12 +25,12 @@
             </div>
             <div class="wrapper-songs">
                 <label>FAVORITE SONGS</label>
-                <ul v-if="authStore.favorite_songs.length > 0">
+                <ul v-if="authStore.favorite_songs && authStore.favorite_songs.length > 0">
                     <li v-for="song in authStore.favorite_songs" :key="song.id">
-                        <img id="img-album" :src="song.album.coverUrl" />
+                        <img id="img-album" :src="getSongCover(song)" />
                         <div class="song-info">
                             <p id="txt-song" class="song-name">{{ song.name }}</p>
-                            <p id="txt-artist" class="song-artists">{{ song.artists.join(', ') }}</p>
+                            <p id="txt-artist" class="song-artists">{{ getArtists(song) }}</p>
                         </div>
                     </li>
                 </ul>
@@ -42,6 +42,7 @@
 
 <script>
 import { useAuthStore } from '../stores/auth.js';
+import songJSON from '../data/songs.js';
 
 export default {
     data() {
@@ -58,7 +59,25 @@ export default {
             useAuthStore().updateUserData(this.authStore.name, this.authStore.surname, this.authStore.code);
             this.formEditable = false;
         },
+        getSongCover(song) {
+            for (song of songJSON) {
+                if (song.id in this.authStore.favorite_songs) {
+                    return song.album.images[0].url;
+                }
+            }
+        },
+        getSongObject(songID) {
+            for (const songItem of songJSON) {
+                if (songItem.id == songID) {
+                    return songItem;
+                }
+            }
+        },
+        getArtists(songID) {
+            const song = this.getSongObject(songID);
+            return song.album.artists.map(artist => artist.name).join(', ');
+        },
     },
-};
+}   
 </script>
 <style></style>
