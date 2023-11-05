@@ -32,8 +32,7 @@
                         <span id="txt-index" v-if="song.id != currentlyPlayingId">{{ index + 1 }}</span>
                     </td>
                     <td id="td-title">
-                        <img id="img-album" :src="song.album.images[0].url" alt="Album Cover"
-                            class="album-cover centered-cell" />
+                        <img id="img-album" :src="song.album.images[0].url"  />
                         {{ song.name }}
                     </td>
                     <td id="td-artist">{{ song.album.artists.map(artist => artist.name).join(', ') }}</td>

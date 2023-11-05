@@ -3,8 +3,12 @@
         <div class="wrapper-header">
             <h1>ALBUMS</h1>
             <div class="settings">
-                <button id="btn-grid" @click="switchLayout('grid')">IconGrid</button>
-                <button id="btn-list" @click="switchLayout('list')">IconList</button>
+                <button id="btn-grid" @click="switchLayout('grid')" :class="{ active: isGridLayout }">
+                    <IconGrid />
+                </button>
+                <button id="btn-list" @click="switchLayout('list')" :class="{ active: !isGridLayout }">
+                    <IconList />
+                </button>
             </div>
         </div>
         <ul :class="{ 'grid': isGridLayout, 'list': !isGridLayout }" id="list-albums">
@@ -27,6 +31,8 @@
 <script>
 import songs from '../data/songs.js'; // Import your data
 import { usePlayerStore } from '../stores/player';
+import IconGrid from '../components/icons/IconGrid.vue';
+import IconList from '../components/icons/IconList.vue';
 
 export default {
     data() {
@@ -77,9 +83,9 @@ export default {
             return Array.from(albumMap.values());
         },
     },
-};
+    components: {
+        IconGrid,
+        IconList,
+    },
+}
 </script>
-
-<style>
-/* Add your CSS styles here */
-</style>

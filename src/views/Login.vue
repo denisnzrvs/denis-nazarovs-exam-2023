@@ -12,7 +12,6 @@
     </div>
 </template>
 <script>
-import { computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
 
 export default {
